@@ -57,5 +57,5 @@ module.exports = {
       }
       return res.clearCookie('auth').json({ message: 'Logout successful' });
     });
-  }
+  },
 };
