@@ -32,6 +32,12 @@ module.exports = {
             });
           }
 
+          if (feedPosts.length === 0) {
+            return res.status(200).json({
+              message: 'Nothing to show here',
+            });
+          }
+
           feedPosts.sort(
             (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
           );

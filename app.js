@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 
+const redisClient = require('./config/redisClient');
 const routes = require('./routes');
 
 const app = express();
@@ -12,6 +13,10 @@ const PORT = process.env.PORT || 8000;
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
+
+redisClient.on('connect', () => {
+  console.log('Redis server connected');
+});
 
 try {
   mongoose.connect(process.env.MONGO_DB_CONNECTION, {

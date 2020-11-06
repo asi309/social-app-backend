@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const redisClient = require('../config/redisClient');
 const User = require('../models/User');
 
 module.exports = {
@@ -35,6 +36,7 @@ module.exports = {
           { user: userResponse },
           process.env.SECRET,
           (error, token) => {
+            redisClient.hset(`users:${userResponse._id}`, 'authToken', token);
             return res
               .cookie('auth', token, { httpOnly: true, expires: 0 })
               .json({ user_id: userResponse._id });
@@ -51,11 +53,20 @@ module.exports = {
     }
   },
   logout(req, res) {
-    jwt.verify(req.token, process.env.SECRET, async (error, authData) => {
-      if (error) {
-        return res.status(401).json({ message: 'Not Authorized' });
+    const { user_id } = req.headers;
+    redisClient.hdel(`users:${user_id}`, 'authToken');
+    return res.clearCookie('auth').json({ message: 'Logout successful' });
+  },
+  checkAuthStatus(req, res) {
+    const { user_id } = req.headers;
+    redisClient.exists(`users:${user_id}`, (err, reply) => {
+      if (err) {
+        return console.log('error', err);
       }
-      return res.clearCookie('auth').json({ message: 'Logout successful' });
+      if (reply === 1) {
+        return res.status(200).json({ message: 'Logged in' });
+      }
+      return res.status(200).json({ message: 'Invalid session' });
     });
   },
 };

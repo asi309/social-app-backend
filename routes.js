@@ -21,6 +21,7 @@ router.get('/', (req, res) => {
 router.post('/login', authController.login);
 router.get('/logout', verifyToken, authController.logout);
 router.post('/user/register', userController.createUser);
+router.get('/check', authController.checkAuthStatus);
 
 //social routes
 router.get('/user/:userId', verifyToken, userController.getUserById);

@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const redisClient = require('../config/redisClient');
 const User = require('../models/User');
 
 module.exports = {
@@ -8,9 +9,10 @@ module.exports = {
     try {
       const { firstName, lastName, username, email, password } = req.body;
 
-      const existing_user = await User.findOne({ email });
+      const existing_email = await User.findOne({ email });
+      const existing_username = await User.findOne({ username });
 
-      if (!existing_user) {
+      if (!existing_email && !existing_username) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
           firstName,
@@ -31,14 +33,16 @@ module.exports = {
             },
           },
           process.env.SECRET,
-          (error, token) =>
-            res
+          (error, token) => {
+            redisClient.hset(`users:${user._id}`, 'authToken', token);
+            return res
               .cookie('auth', token, { httpOnly: true, expires: 0 })
-              .json({ user_id: user._id })
+              .json({ user_id: user._id });
+          }
         );
       } else {
         return res.status(400).json({
-          message: 'Email already in use',
+          message: 'Email or username already in use',
         });
       }
     } catch (error) {
@@ -46,27 +50,21 @@ module.exports = {
     }
   },
   async getUserById(req, res) {
-    jwt.verify(req.token, process.env.SECRET, async (error, authData) => {
-      if (error) {
-        return res.status(401).json({ message: 'Not Authorized' });
-      } else {
-        const { userId } = req.params;
-        try {
-          const user = await User.findById(userId);
+    const { userId } = req.params;
+    try {
+      const user = await User.findById(userId);
 
-          return res.status(200).json({
-            _id: user._id,
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.firstName,
-            email: user.email,
-          });
-        } catch (error) {
-          return res.status(404).json({
-            message: 'user does not exist',
-          });
-        }
-      }
-    });
+      return res.status(200).json({
+        _id: user._id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.firstName,
+        email: user.email,
+      });
+    } catch (error) {
+      return res.status(404).json({
+        message: 'user does not exist',
+      });
+    }
   },
 };
