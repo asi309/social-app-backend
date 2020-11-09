@@ -32,16 +32,40 @@ module.exports = {
           lastName: user.lastName,
         };
 
-        return jwt.sign(
-          { user: userResponse },
-          process.env.SECRET,
-          (error, token) => {
-            redisClient.hset(`users:${userResponse._id}`, 'authToken', token);
-            return res
-              .cookie('auth', token, { httpOnly: true, expires: 0 })
-              .json({ user_id: userResponse._id });
+        redisClient.exists(`users:${userResponse._id}`).then((value) => {
+          if (value === 1) {
+            redisClient
+              .hget(`users:${userResponse._id}`, 'authToken')
+              .then((value) => {
+                return res
+                  .cookie('auth', value, {
+                    httpOnly: true,
+                    expires: 0,
+                    secure: true,
+                  })
+                  .json({ user_id: userResponse._id });
+              });
+          } else {
+            return jwt.sign(
+              { user: userResponse },
+              process.env.SECRET,
+              (error, token) => {
+                redisClient.hset(
+                  `users:${userResponse._id}`,
+                  'authToken',
+                  token
+                );
+                return res
+                  .cookie('auth', token, {
+                    httpOnly: true,
+                    expires: 0,
+                    secure: true,
+                  })
+                  .json({ user_id: userResponse._id });
+              }
+            );
           }
-        );
+        });
       } else {
         return res.status(400).json({
           message:
@@ -53,17 +77,16 @@ module.exports = {
     }
   },
   logout(req, res) {
-    const { user_id } = req.headers;
-    redisClient.hdel(`users:${user_id}`, 'authToken');
-    return res.clearCookie('auth').json({ message: 'Logout successful' });
+    redisClient.exists(`users:${req.user_id}`).then((value) => {
+      if (value === 1) {
+        redisClient.hdel(`users:${req.user_id}`, 'authToken');
+      }
+      return res.clearCookie('auth').json({ message: 'Logout successful' });
+    });
   },
   checkAuthStatus(req, res) {
-    const { user_id } = req.headers;
-    redisClient.exists(`users:${user_id}`, (err, reply) => {
-      if (err) {
-        return console.log('error', err);
-      }
-      if (reply === 1) {
+    redisClient.exists(`users:${req.user_id}`).then((value) => {
+      if (value === 1) {
         return res.status(200).json({ message: 'Logged in' });
       }
       return res.status(200).json({ message: 'Invalid session' });

@@ -3,7 +3,6 @@ const User = require('../models/User');
 
 module.exports = {
   async follow(req, res) {
-    const { user_id } = req.headers;
     const { userToFollow } = req.body;
 
     try {
@@ -13,13 +12,13 @@ module.exports = {
       }
 
       const existing_follow = await Following.find({
-        follower: user_id,
+        follower: req.user_id,
         following: userToFollow,
       });
 
       if (existing_follow.length === 0) {
         const follow_doc = await Following.create({
-          follower: user_id,
+          follower: req.user_id,
           following: userToFollow,
         });
 

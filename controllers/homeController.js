@@ -4,52 +4,45 @@ const Following = require('../models/Following');
 const Post = require('../models/Post');
 
 module.exports = {
-  showAllPosts(req, res) {
-    jwt.verify(req.token, process.env.SECRET, async (error, authData) => {
-      if (error) {
-        res.status(401).json({ message: 'Not Authorized' });
-      } else {
-        const { user_id } = req.headers;
+  async showAllPosts(req, res) {
+    try {
+      const following_docs = await Following.find({
+        follower: req.user_id,
+      });
 
-        try {
-          const following_docs = await Following.find({
-            follower: user_id,
-          });
+      if (following_docs.length === 0) {
+        return res
+          .status(200)
+          .json({ message: 'Follow people to see their posts' });
+      }
 
-          if (following_docs.length === 0) {
-            return res
-              .status(200)
-              .json({ message: 'Follow people to see their posts' });
-          }
-
-          let feedPosts = [];
-          for (following_doc of following_docs) {
-            const posts = await Post.find({
-              author: following_doc.following._id,
-            });
-            posts.forEach((post) => {
-              feedPosts.push(post);
-            });
-          }
-
-          if (feedPosts.length === 0) {
-            return res.status(200).json({
-              message: 'Nothing to show here',
-            });
-          }
-
-          feedPosts.sort(
-            (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
-          );
-
-          return res.status(200).json({
-            message: 'Found posts',
-            feedPosts,
-          });
-        } catch (error) {
-          res.status(400).json({ message: 'Cannot load feed' });
+      let feedPosts = [];
+      for (following_doc of following_docs) {
+        const posts = await Post.find({
+          author: following_doc.following._id,
+        });
+        for (post of posts) {
+          await post.populate('author', '-password').execPopulate();
+          feedPosts.push(post);
         }
       }
-    });
+
+      if (feedPosts.length === 0) {
+        return res.status(200).json({
+          message: 'Nothing to show here',
+          length: 0,
+        });
+      }
+
+      feedPosts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+      return res.status(200).json({
+        message: 'Found posts',
+        feedPosts,
+        length: feedPosts.length,
+      });
+    } catch (error) {
+      res.status(400).json({ message: 'Cannot load feed' });
+    }
   },
 };

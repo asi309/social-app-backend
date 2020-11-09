@@ -2,7 +2,7 @@ const Post = require('../models/Post');
 
 module.exports = {
   async likePost(req, res) {
-    const { user_id, post_id } = req.headers;
+    const { post_id } = req.headers;
 
     try {
       const existing_post = await Post.findById(post_id);
@@ -13,13 +13,13 @@ module.exports = {
       }
 
       const existing_likes_index = existing_post.likes.findIndex(
-        (like) => like.user.toString() === user_id.toString()
+        (like) => like.user.toString() === req.user_id.toString()
       );
 
       if (existing_likes_index > -1) {
         existing_post.likes.splice(existing_likes_index, 1);
       } else {
-        existing_post.likes.push({ user: user_id });
+        existing_post.likes.push({ user: req.user_id });
       }
 
       await existing_post.save();
@@ -33,7 +33,7 @@ module.exports = {
     }
   },
   async createComment(req, res) {
-    const { user_id, post_id } = req.headers;
+    const { post_id } = req.headers;
     const { content } = req.body;
 
     try {
@@ -46,7 +46,7 @@ module.exports = {
 
       existing_post.comments.push({
         content,
-        author: user_id,
+        author: req.user_id,
         date: Date.now(),
       });
 
