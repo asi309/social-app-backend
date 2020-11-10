@@ -87,7 +87,9 @@ module.exports = {
   checkAuthStatus(req, res) {
     redisClient.exists(`users:${req.user_id}`).then((value) => {
       if (value === 1) {
-        return res.status(200).json({ message: 'Logged in' });
+        return res
+          .status(200)
+          .json({ message: 'Logged in', user_id: req.user_id });
       }
       return res.status(200).json({ message: 'Invalid session' });
     });
