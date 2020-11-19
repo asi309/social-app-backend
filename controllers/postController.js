@@ -16,7 +16,7 @@ module.exports = {
       });
       await post.populate('author', '-password').execPopulate();
 
-      return res.json({
+      return res.status(201).json({
         message: 'Post created successfully',
         post,
       });
