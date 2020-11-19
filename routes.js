@@ -28,6 +28,7 @@ router.get('/user/:userId', verifyToken, userController.getUserById);
 router.post('/user/follow', verifyToken, followController.follow);
 router.get('/post/like', verifyToken, reactionController.likePost);
 router.post('/post/comment', verifyToken, reactionController.createComment);
+router.get('/post/:postId', verifyToken, postController.getPostById);
 
 // home route for all the posts -> GET
 router.get('/home', verifyToken, homeController.showAllPosts);

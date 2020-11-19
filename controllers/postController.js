@@ -34,4 +34,17 @@ module.exports = {
       return res.status(400).send();
     }
   },
+  async getPostById(req, res) {
+    const { postId } = req.params;
+    try {
+      const post = await Post.findById(postId);
+      await post.populate('author', '-password').execPopulate();
+
+      return res.status(200).json(post);
+    } catch (error) {
+      return res.status(404).json({
+        message: 'Cannot find post',
+      });
+    }
+  },
 };
