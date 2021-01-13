@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 
 const redisClient = require('../config/redisClient');
 const User = require('../models/User');
+const Post = require('../models/Post');
+const Following = require('../models/Following');
 
 module.exports = {
   async createUser(req, res) {
@@ -54,14 +56,38 @@ module.exports = {
     try {
       const user = await User.findById(userId);
 
+      if (!user) {
+        return res.status(404).json({
+          message: 'User not found. User may have deactivated account',
+        });
+      }
+
+      const totalDocs = await Post.find({ author: userId }).countDocuments();
+      const totalFollowing = await Following.find({
+        follower: userId,
+      }).countDocuments();
+      const totalFollower = await Following.find({
+        following: userId,
+      }).countDocuments();
+      const existing_follow = await Following.findOne({
+        following: userId,
+        follower: req.user_id,
+      });
+      const isFollowed = !!existing_follow;
+
       return res.status(200).json({
         _id: user._id,
         username: user.username,
         firstName: user.firstName,
         lastName: user.firstName,
         email: user.email,
+        totalDocs,
+        totalFollowing,
+        totalFollower,
+        isFollowed
       });
     } catch (error) {
+      console.log(error);
       return res.status(404).json({
         message: 'user does not exist',
       });

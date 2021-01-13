@@ -33,7 +33,7 @@ router.get('/post/:postId', verifyToken, postController.getPostById);
 // home route for all the posts -> GET
 router.get('/home', verifyToken, homeController.showAllPosts);
 // get route for all my posts -> GET
-router.get('/my-posts', verifyToken, postController.getPostByUser);
+router.get('/posts', verifyToken, postController.getPostByUser);
 
 // post route for adding new post -> POST
 router.post('/create', verifyToken, postController.createPost);
