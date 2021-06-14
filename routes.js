@@ -19,13 +19,19 @@ router.get('/', (req, res) => {
 
 // auth routes
 router.post('/login', authController.login);
-router.get('/logout', verifyToken, authController.logout);
+// router.get('/logout', verifyToken, authController.logout);
 router.post('/user/register', userController.createUser);
-router.get('/check', verifyToken, authController.checkAuthStatus);
+// router.get('/check', verifyToken, authController.checkAuthStatus);
 
 //social routes
-router.get('/user/:userId', verifyToken, userController.getUserById);
+router.get('/user/id/:userId', verifyToken, userController.getUserById);
+router.get('/user/name/:username', verifyToken, userController.getUserByName);
 router.post('/user/follow', verifyToken, followController.follow);
+router.delete(
+  '/unfollow/user/:userToUnfollow',
+  verifyToken,
+  followController.unfollow
+);
 router.get('/post/like', verifyToken, reactionController.likePost);
 router.post('/post/comment', verifyToken, reactionController.createComment);
 router.get('/post/:postId', verifyToken, postController.getPostById);
