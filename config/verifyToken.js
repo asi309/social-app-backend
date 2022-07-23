@@ -1,13 +1,10 @@
-const jwt = require('jsonwebtoken');
-
 function verifyToken(req, res, next) {
-  const token = req.header('user');
-  // if no token, unauthorized -> else
-  if (typeof token !== 'undefined') {
-    req.token = token;
+  const bearerToken = req.header('user');
+  if (typeof bearerToken !== 'undefined') {
+    req.token = bearerToken;
     next();
   } else {
-    res.status(401).json({ message: 'Not Authorized' });
+    res.status(403).send();
   }
 }
 
